@@ -1,18 +1,11 @@
 
-// input/output pin variables 
-int solL = 12;
-int solR;
-int senL = 8;
-int senR;
-int tone1 = 4;
-int tone2;
-int senState1 = 0;
-int senState2 = 0;
-int light;
+// input/output Arduino pin constants 
+
 
 // trial arrays
-int rd[2] = {1000,2000};                      //reward delivery duration (ms)
-int iti[6] ={3750,4000,4250,4500,4750,5000};  //inter-trial interval time
+const int rd[2] = {1000,2000};                      //reward delivery duration (ms)
+const int iti[6] ={3750,4000,4250,4500,4750,5000};  //inter-trial interval time
+const int stimType[6]={1,2,3,4,5,6};                //type of stimulus to be delivered (1=no stim,2=200ms,etc.) 
 byte pickRD;
 byte pickITI;
 
@@ -20,11 +13,14 @@ byte pickITI;
 
 
 // functions
-void trialType(){
+int trialType(){
 
   
 }
-void interTrial(){
+int rewardDeliv(){
+  digitalWrite(
+}
+int interTrial(){
   delay(iti[random(5)]);
 }
 void setup() {
