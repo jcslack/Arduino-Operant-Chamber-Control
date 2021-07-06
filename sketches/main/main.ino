@@ -1,3 +1,5 @@
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,20,4);
 
 // input/output Arduino pin constants 
 const int solL = 13;  // left solenoid
@@ -11,18 +13,18 @@ int senStateL = 0;    //
 int senStateR = 0;
 
 // outputs to plexon (ripple)
-int TB = 6;  // house light on, trial begins (TB)
-int SB = 5;  // stim begins (SB)
-int NRT = 4; // no response trial (NRT)
-int RD = 14;  // reward delivered (RD)
-int FT = 15;  // forced trial (FT)
-int LPT = 16; // left port trial (LPT)
-int RPT = 17; // right port trial (RPT)
-int LP = 18;  // left port press
-int RP = 19;  // right port press
+const int TB = 6;  // house light on, trial begins (TB)
+const int SB = 5;  // stim begins (SB)
+const int NRT = 4; // no response trial (NRT)
+const int RD = 14;  // reward delivered (RD)
+const int FT = 15;  // forced trial (FT)
+const int LPT = 16; // left port trial (LPT)
+const int RPT = 17; // right port trial (RPT)
+const int LP = 18;  // left port press
+const int RP = 19;  // right port press
 
 // trial arrays and states
-int rd[2] = {1000,2000};                      //reward delivery duration (ms)
+int rd[2] = {30,50};                      //reward delivery duration (ms)
 const int nRD = sizeof(rd)/sizeof(rd[0]);
 int iti[6] ={3750,4000,4250,4500,4750,5000};  //inter-trial interval time
 int nITI = sizeof(iti)/sizeof(iti[0]);
@@ -36,6 +38,8 @@ int entryRD = -1;
 int entryITI = -1;
 int entryT = -1;
 unsigned long startWait;
+unsigned long T0;
+const unsigned long run_time = 5400000;
 int unresponsive = 0;
 
 
@@ -70,12 +74,9 @@ void randomize ( int arr[], int n ){
     }   
 }
 
-
-
-//-------------------------------------INITIALIZATION---------------------------------------------------------
-// setup loop
-void setup() {
-  // pin mode declaraction
+// set up arduino pins
+void setPins(){
+  // pin mode declaration
   pinMode(solL,OUTPUT);
   pinMode(solR,OUTPUT);
   pinMode(tone1,OUTPUT);
@@ -94,18 +95,57 @@ void setup() {
   pinMode(RPT,OUTPUT);
   pinMode(LP,OUTPUT);
   pinMode(RP,OUTPUT);
+
+  //pull up resistors for sensor pins
+  pinMode(senL,INPUT_PULLUP);
+  pinMode(senR,INPUT_PULLUP);
+}
+
+void shortTone(){
+  digitalWrite(tone1,HIGH);
+  delay(150);
+  digitalWrite(tone1,LOW);
+}
+
+void longTone(){
+  digitalWrite(tone2,HIGH);
+  delay(1000);
+  digitalWrite(tone2,LOW);
+}
+
+//-------------------------------------INITIALIZATION---------------------------------------------------------
+// setup loop
+void setup() {
   
-  // start IR sensors
-  //digitalWrite(senL,HIGH);
-  //digitalWrite(senR,HIGH);
+  lcd.init();
+  lcd.clear();
+  lcd.backlight();
+  lcd.setCursor(2,0);
+  lcd.print("Beginning Session");
+  Serial.begin(9600);
+  Serial.print("A ");
+  Serial.print("F ");
+  Serial.print("B");
+  setPins();
+ 
   randomize(iti,nITI);
   randomize(trialType,nT);
   randomize(rd,nRD);
+  T0=millis();
 }
 
 //---------------------------------------------------MAIN LOOP--------------------------------------------------
 // main loop
 void loop() {
+  if(millis()-T0 > run_time){
+    Serial.println("End of Run");
+    lcd.setCursor(2,0);
+    lcd.print("Run Time Reached")
+    lcd.setCursor(2,1);
+    lcd,print("---End of Session---");
+    while(1){
+    }
+  }
   //S2  set randomization of inter-trial interval
   if (E==0){
     delay(50);
@@ -119,6 +159,8 @@ void loop() {
 
   //S3 trial is selected and sent to plexon (ripple)
   delay(iti[pickITI]);
+  Serial.print(trialType[entryT]); //print trial type (1 or 2) to serial monitor
+  Serial.print(" ");
   ++entryRD;
   ++entryITI;
   if (entryRD > nRD-1){ //resets random selection without replacement if all values chosen
@@ -152,13 +194,15 @@ void loop() {
   //-------------------------------------FORCED TRIAL-----------------------------------------
   //S6
   delay(2000);
+  digitalWrite(SB,LOW);
   if (E == maxError){
     ++F;
     digitalWrite(FT,HIGH);
-    digitalWrite(SB,LOW);
+    Serial.print(1);       //print forced (1) or unforced (0) to serial monitor
+    Serial.print(" ");
   //S7
-    digitalWrite(senL,HIGH);
-    digitalWrite(senR,HIGH);
+    //digitalWrite(senL,HIGH);
+    //digitalWrite(senR,HIGH);
     while(digitalRead(senL) == HIGH && digitalRead(senR) == HIGH){  //wait for beam break
     }
     senStateL=digitalRead(senL);
@@ -168,11 +212,13 @@ void loop() {
     digitalWrite(FT,LOW);
     digitalWrite(RD,HIGH);
     if (senStateL == LOW){
+      Serial.println(1);    //print left port press (1) to serial monitor
       digitalWrite(LP,HIGH);
       digitalWrite(solL,HIGH);
       delay(rd[entryRD]);
     }
-    else{
+    else if (senStateR == LOW){
+      Serial.println(2);         //print right port press (2) to serial monitor
       digitalWrite(RP,HIGH);
       digitalWrite(solR,HIGH);
       delay(rd[entryRD]);
@@ -181,36 +227,100 @@ void loop() {
    
   }
   //--------------------------------------UNFORCED TRIAL----------------------------------
-  //S11
+  //S11 & S12
   else{ 
-    digitalWrite(SB,LOW);
+    Serial.print(0);  //print unforced (0) to serial monitor
+    Serial.print(" ");
     startWait=millis();
     while(digitalRead(senL) == HIGH && digitalRead(senR) == HIGH){
-      if (millis()-startWait >=10000){
+      if (millis()-startWait >= 10000){
         unresponsive=1;
         break;
       }
     }
     senStateL=digitalRead(senL);
     senStateR=digitalRead(senR);
+    
+    //Unresponsive
     if (unresponsive == 1){
+      Serial.println(5);    //print unresponsive (5) to serial monitor
       digitalWrite(NRT,HIGH);
       ++E;
       ++U;
       ++N;
+      longTone();
       delay(rd[entryRD]);
+      digitalWrite(NRT,LOW);
     }
-    else if(trialType[entryT]==1 && senStateL == LOW){
-      digitalWrite(LP,HIGH);
-      ++C;
-      E=0;
-      digitalWrite(solL,HIGH);
+    //trial type 1 is correct
+    else if (trialType[entryT] == 1){ 
+      //correct port chosen
+      if (senStateL == LOW){
+        Serial.println(1);
+        digitalWrite(LP,HIGH);
+        ++C;
+        E=0;
+        ++N;
+        shortTone();
+        digitalWrite(solL,HIGH);
+        digitalWrite(RD,HIGH);
+        delay(rd[entryRD]);
+        digitalWrite(solL,LOW);
+        digitalWrite(RD,LOW);
+        digitalWrite(LP,LOW);
+      }
+      //incorrect port chosen
+      else if(senStateR == LOW){
+        Serial.println(2);
+        digitalWrite(RP,HIGH);
+        ++E; 
+        ++N;
+        longTone();
+        delay(rd[entryRD]);
+        digitalWrite(RP,LOW);
+      }
     }
-    else if (trialType[entryT]==1 && senStateR == LOW){
-      digitalWrite(RP,HIGH);
-      ++E;
+    // trial type 2 is correct
+    else if (trialType[entryT] == 2){
+      //incorrect port chosen
+      if (senStateL == LOW){
+        Serial.println(1);
+        digitalWrite(LP,HIGH);
+        ++E;
+        ++N;
+        longTone();
+        delay(rd[entryRD]);
+        digitalWrite(LP,LOW);
+      }
+      //correct port chosen
+      else if (senStateR == LOW){
+        Serial.println(2);
+        digitalWrite(RP,HIGH);
+        ++C;
+        E=0;
+        ++N;
+        shortTone();
+        digitalWrite(solR,HIGH);
+        digitalWrite(RD,HIGH);
+        delay(rd[entryRD]);
+        digitalWrite(solR,LOW);
+        digitalWrite(RD,LOW);
+        digitalWrite(RP,LOW);
+      }
     }
   }
- 
- 
+  delay(1);
+  if(N == U+F){
+    P=0;
+  }
+  else{
+    P=C/(N-U-F);
+  }
+  delay(1);
+  /* display stuff here
+   *  
+   *  
+   *  
+ */
+  delay(1);
 }
