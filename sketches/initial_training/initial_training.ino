@@ -89,7 +89,7 @@ void loop() {
     delay(100);
     digitalWrite(toneS,HIGH);
     digitalWrite(solL,LOW);
-    delay(50);
+    delay(10);
     digitalWrite(solL,HIGH);
   }
   else if(senStateR == LOW){
@@ -100,7 +100,7 @@ void loop() {
     delay(100);
     digitalWrite(toneS,HIGH);
     digitalWrite(solR,LOW);
-    delay(50);
+    delay(10);
     digitalWrite(solR,HIGH);
   }
     
