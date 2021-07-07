@@ -12,12 +12,13 @@ int senStateL = 0;
 int senStateR = 0;
 unsigned long startSession;
 unsigned long startWait;
+const unsigned long runTime = 3600000;
 int unresponsive = 0;
-int U = 0;
-int R = 0;
-int L = 0;
-int T = 0;
-int N = 0;
+int U = 0; //number of non-responses
+int R = 0; //number of right port responses
+int L = 0; //number of left port responses
+int T = 0; //total responses (L+R)
+int N = 0; //total trials (L+R+U)
 
 //-----------------functions-----------------------------
 void setPINS(){
@@ -43,28 +44,56 @@ void setLCD(){
  
 }
 
+void dispTrialCounters(int numTrials,int numResponses, int numNonresponses){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("---Trial Counters---"
+  lcd.setCursor(0,1);
+  lcd.print("Non-Responses: ");
+  lcd.setCursor(15,1);
+  lcd.print(numNonresponses);
+  lcd.setCursor(0,2);
+  lcd.print("Responses: ");
+  lcd.setCursor(15,2);
+  lcd.print(numResponses);
+  lcd.setCursor(0,3);
+  lcd.print("Total Trials: ");
+  lcd.setCursor(15,3);
+  lcd.print(numTrials);
+  delay(6000);
+}
+
+void endSession(){
 
 
-//------------------------------main------------------------------
+  
+}
+//------------------------------MAIN------------------------------
 void setup() {
+  Serial.begin(9600);
   setLCD();
   setPINS();
- 
+  startSession = millis();
 }
 
 void loop() {
+  if(millis()-startSession > runTime){
+    endSession();
+  }
+
+//-------------------------TRIAL BEGINS---------------------
   lcd.clear();
   lcd.setCursor(2,0);
   lcd.print("Begin Trial");
   digitalWrite(light,LOW);
   delay(1000);
-  digitalWrite(light,HIGH);
   lcd.clear();
+
+//------------------------WAIT FOR SENSOR INPUT--------------
   startWait=millis();
-  lcd.setCursor(2,0);
-  lcd.print("Waiting for Nose Poke");
+  lcd.setCursor(0,0);
+  lcd.print("Wait for Response");
   while(digitalRead(senL) == HIGH && digitalRead(senR) == HIGH){
-    
     if(millis()-startWait >= 20000){
       unresponsive = 1;
       break;
@@ -105,6 +134,7 @@ void loop() {
   }
     
     delay(2000);
+    digitalWrite(light,HIGH);
     lcd.clear();
     lcd.setCursor(2,0);
     lcd.print("Next Trial");
