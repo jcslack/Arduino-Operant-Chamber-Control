@@ -10,8 +10,14 @@ const int toneL = 4;
 const int light = 4;
 int senStateL = 0;
 int senStateR = 0;
+unsigned long startSession;
 unsigned long startWait;
 int unresponsive = 0;
+int U = 0;
+int R = 0;
+int L = 0;
+int T = 0;
+int N = 0;
 
 //-----------------functions-----------------------------
 void setPINS(){
@@ -25,6 +31,7 @@ void setPINS(){
   digitalWrite(solR,HIGH);
   digitalWrite(toneS,HIGH);
   digitalWrite(light,HIGH);
+  delay(2500);
 }
 
 void setLCD(){
@@ -36,11 +43,7 @@ void setLCD(){
  
 }
 
-//void deliverReward(int pinNum, int duration){
-  
 
-  
-//}
 
 //------------------------------main------------------------------
 void setup() {
