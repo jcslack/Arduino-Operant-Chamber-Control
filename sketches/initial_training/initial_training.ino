@@ -48,10 +48,13 @@ void setLCD(){
 
 //when called, displays trial counters on LCD screen given N (numTrials), 
 //T (numResponses), and U (numNonresponses) inputs
-void dispTrialCounters(int numTrials,int numResponses, int numNonresponses){
+void dispTrialCounters(int numTrials,int numResponses, int numNonresponses,unsigned long t0){
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("---Trial Counters---");
+  lcd.print("Elapsed Time: ");
+  lcd.setCursor(14,0);
+  lcd.print(millis()-t0);
+  //lcd.print("---Trial Counters---");
   lcd.setCursor(0,1);
   lcd.print("Non-Responses: ");
   lcd.setCursor(15,1);
@@ -64,7 +67,7 @@ void dispTrialCounters(int numTrials,int numResponses, int numNonresponses){
   lcd.print("Total Trials: ");
   lcd.setCursor(15,3);
   lcd.print(numTrials);
-  delay(4000);
+  delay(3000);
 }
 
 //when called (i.e. when session time reaches runTime), 
@@ -84,9 +87,9 @@ void dispElapsedTime(unsigned long t0){
   lcd.setCursor(14,1);
   lcd.autoscroll();
   float t;
-  t = (millis()-t0)/(60*1000);
+  t = (millis()-t0)/1000;
   lcd.print(t);
-  lcd.print(" min");
+  lcd.print(" sec");
   lcd.noAutoscroll();
   
 }
@@ -137,7 +140,7 @@ void loop() {
   else if(senStateL == LOW){
     lcd.clear();
     lcd.setCursor(2,0);
-    lcd.print("Left Port Poke");
+    lcd.print("Right Port Poke");
     digitalWrite(solL,LOW);
     delay(10);
     digitalWrite(solL,HIGH);
@@ -149,9 +152,9 @@ void loop() {
   else if(senStateR == LOW){
     lcd.clear();
     lcd.setCursor(2,0);
-    lcd.print("Right Port Poke");
+    lcd.print("Left Port Poke");
     digitalWrite(solR,LOW);
-    delay(10);
+    delay(15);
     digitalWrite(solR,HIGH);
     digitalWrite(toneS,LOW);
     delay(100);
@@ -160,12 +163,13 @@ void loop() {
   }
   T=L+R;
   N=L+R+U;
+  delay(1000);
   digitalWrite(light,HIGH);
-  dispTrialCounters(N,T,U);
-  lcd.clear();
+  dispTrialCounters(N,T,U,startSession);
+  //lcd.clear();
   lcd.setCursor(0,0);
-  dispElapsedTime(startSession);
-  delay(2000);
+  //dispElapsedTime(startSession);
+  //delay(2000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("-----Next Trial-----");
