@@ -51,9 +51,22 @@ void setLCD(){
 void dispTrialCounters(int numTrials,int numResponses, int numNonresponses,unsigned long t0){
   lcd.clear();
   lcd.setCursor(0,0);
+  unsigned long msec = millis()-t0;
+  unsigned long sec = msec/1000;
+  unsigned long mins = sec/60;
+
   lcd.print("Elapsed Time: ");
   lcd.setCursor(14,0);
-  lcd.print(millis()-t0);
+  if(sec < 60){
+    lcd.print(sec);
+    lcd.setCursor(17,0);
+    lcd.print("sec");
+  }
+  else{
+    lcd.print(mins);
+    lcd.setCursor(17,0);
+    lcd.print("min");
+  }
   //lcd.print("---Trial Counters---");
   lcd.setCursor(0,1);
   lcd.print("Non-Responses: ");
@@ -81,7 +94,7 @@ void endSession(){
 }
 
 //displays elapsed time on LCD since startSession was set
-void dispElapsedTime(unsigned long t0){
+/*void dispElapsedTime(unsigned long t0){
   lcd.setCursor(0,1);
   lcd.print("Elapsed Time: ");
   lcd.setCursor(14,1);
@@ -92,7 +105,7 @@ void dispElapsedTime(unsigned long t0){
   lcd.print(" sec");
   lcd.noAutoscroll();
   
-}
+}*/
 
 //------------------------------MAIN------------------------------
 void setup() {
@@ -120,7 +133,7 @@ void loop() {
   lcd.setCursor(0,0);
   lcd.print("Waiting for Response");
   while(digitalRead(senL) == HIGH && digitalRead(senR) == HIGH){
-    if(millis()-startWait >= 20000){
+    if(millis()-startWait >= 5000){
       unresponsive = 1;
       break;
     }
